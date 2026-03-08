@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Meal Rotation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FDF6EE;
+      --card: #FFFCF8;
+      --text: #1C1410;
+      --muted: #9C8878;
+      --accent: #C8521A;
+      --accent-light: #F0D5C5;
+      --done: #7BAF7A;
+      --border: #EDE0D4;
+      --shadow: rgba(28, 20, 16, 0.08);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    /* Header */
+    .header {
+      padding: 20px 24px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .cycle-badge {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--accent-light);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* Main area */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 24px 24px;
+      gap: 24px;
+    }
+
+    /* Current meal card */
+    .meal-card {
+      background: var(--card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 36px 28px 32px;
+      box-shadow: 0 4px 24px var(--shadow);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .meal-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), #E87A40);
+      border-radius: 20px 20px 0 0;
+    }
+
+    .meal-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .meal-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 8vw, 38px);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .progress-bar {
+      flex: 1;
+      max-width: 160px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-text {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* Done button */
+    .done-btn {
+      width: 100%;
+      padding: 18px;
+      border-radius: 14px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .done-btn:active {
+      background: #A8420F;
+      transform: scale(0.98);
+    }
+
+    .done-btn .check-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Next up */
+    .next-section {
+      padding: 0 4px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .next-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .next-arrow {
+      font-size: 20px;
+      color: var(--accent-light);
+      flex-shrink: 0;
+    }
+
+    .next-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--text);
+      opacity: 0.6;
+    }
+
+    /* History section */
+    .history-section {
+      padding: 0 4px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .history-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--done);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .history-check svg {
+      width: 10px;
+      height: 10px;
+      stroke: white;
+      stroke-width: 2.5;
+    }
+
+    .history-name {
+      font-size: 15px;
+      color: var(--muted);
+      text-decoration: line-through;
+      text-decoration-color: var(--border);
+    }
+
+    .history-when {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    /* Reset button */
+    .reset-area {
+      padding: 12px 24px 24px;
+      text-align: center;
+    }
+
+    .reset-btn {
+      background: none;
+      border: none;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 8px;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.15s;
+    }
+
+    .reset-btn:active { color: var(--accent); }
+
+    /* Confetti flash on completion */
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: var(--accent);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      border-radius: 0;
+    }
+
+    .flash.go {
+      animation: flashAnim 0.35s ease-out forwards;
+    }
+
+    @keyframes flashAnim {
+      0% { opacity: 0.18; }
+      100% { opacity: 0; }
+    }
+
+    .meal-card {
+      animation: cardIn 0.3s ease-out;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="flash" id="flash"></div>
+
+<header class="header">
+  <span class="header-title">🍽 Tonight's Dinner</span>
+  <span class="cycle-badge" id="cycle-badge">Cycle 1</span>
+</header>
+
+<main class="main">
+
+  <div class="meal-card" id="meal-card">
+    <div class="meal-label">Cook this next</div>
+    <div class="meal-name" id="meal-name">—</div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-text" id="progress-text">1 / 16</div>
+    </div>
+
+    <button class="done-btn" id="done-btn">
+      <span class="check-icon">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      Mark as cooked
+    </button>
+  </div>
+
+  <div class="next-section">
+    <div class="section-label">Up next</div>
+    <div class="next-card">
+      <span class="next-arrow">→</span>
+      <span class="next-name" id="next-name">—</span>
+    </div>
+  </div>
+
+  <div class="history-section" id="history-section" style="display:none">
+    <div class="section-label">Recently cooked</div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+</main>
+
+<div class="reset-area">
+  <button class="reset-btn" id="reset-btn">↺ Reset all progress</button>
+</div>
+
+<script>
+  const MEALS = [
+    "Pizza",
+    "Pyttipanna",
+    "Pasta pesto",
+    "Wok",
+    "Lasagne",
+    "Pannkaka",
+    "Pasta bolognese",
+    "Hot sandwich",
+    "Hasselbackspotatis med airfried tofu",
+    "Mac'N Cheese",
+    "Oven veggies",
+    "Burger",
+    "Köttbullar with pasta",
+    "Pita bread with kebab",
+    "Tomato pasta",
+    "Potatismos brunsås och köttbullar",
+    "Food pie / Shepherd's pie"
+  ];
+
+  const STORAGE_KEY = 'meal-rotation-v1';
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return { index: 0, cycle: 1, history: [] };
+  }
+
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function formatDate(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
+  }
+
+  function render() {
+    const state = loadState();
+    const total = MEALS.length;
+    const idx = state.index % total;
+
+    document.getElementById('meal-name').textContent = MEALS[idx];
+    document.getElementById('next-name').textContent = MEALS[(idx + 1) % total];
+    document.getElementById('progress-text').textContent = `${idx + 1} / ${total}`;
+    document.getElementById('progress-fill').style.width = `${((idx + 1) / total) * 100}%`;
+    document.getElementById('cycle-badge').textContent = `Cycle ${state.cycle}`;
+
+    // Rebuild card animation
+    const card = document.getElementById('meal-card');
+    card.style.animation = 'none';
+    card.offsetHeight; // reflow
+    card.style.animation = '';
+
+    // History (last 4)
+    const hist = (state.history || []).slice(-4).reverse();
+    const histSection = document.getElementById('history-section');
+    const histList = document.getElementById('history-list');
+
+    if (hist.length > 0) {
+      histSection.style.display = '';
+      histList.innerHTML = hist.map(h => `
+        <div class="history-item">
+          <div class="history-check">
+            <svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="history-name">${h.name}</span>
+          <span class="history-when">${formatDate(h.ts)}</span>
+        </div>
+      `).join('');
+    } else {
+      histSection.style.display = 'none';
+    }
+  }
+
+  document.getElementById('done-btn').addEventListener('click', () => {
+    const state = loadState();
+    const idx = state.index % MEALS.length;
+    const cooked = MEALS[idx];
+
+    // Flash effect
+    const flash = document.getElementById('flash');
+    flash.classList.remove('go');
+    flash.offsetHeight;
+    flash.classList.add('go');
+
+    // Update state
+    state.history = state.history || [];
+    state.history.push({ name: cooked, ts: Date.now() });
+    state.index = state.index + 1;
+
+    if (state.index % MEALS.length === 0) {
+      state.cycle = (state.cycle || 1) + 1;
+    }
+
+    saveState(state);
+    render();
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    if (confirm('Reset all progress and start from the beginning?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      render();
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>
